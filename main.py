@@ -1,3 +1,4 @@
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import QApplication, QGridLayout, QLabel, QWidget, \
     QLineEdit, QPushButton, QComboBox, QMainWindow, QTableWidget, \
@@ -46,6 +47,46 @@ class InsertDialog(QDialog):
         connection.commit()
         cursor.close()
         connection.close()
+        main_window.load_data()
+
+
+class SearchDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Search Student")
+        self.setFixedWidth(300)
+        self.setFixedHeight(150)
+
+        layout = QVBoxLayout()
+
+        # create widgets
+        self.student_name = QLineEdit()
+        self.student_name.setPlaceholderText("Name")
+        layout.addWidget(self.student_name)
+
+        button = QPushButton("Search")
+        button.clicked.connect(self.search_student)
+        layout.addWidget(button)
+
+        # if necessary show message
+        self.output_text = QLabel()
+        layout.addWidget(self.output_text)
+
+        self.setLayout(layout)
+
+    def search_student(self):
+        name = self.student_name.text()
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        result = cursor.execute("SELECT * FROM students WHERE name = (?)", (name,))
+        rows = list(result)
+        if len(rows) < 1:
+            self.output_text.setText(f"Student with name {name} not found")
+        items = main_window.table.findItems(name, Qt.MatchFlag.MatchFixedString)
+        for item in items:
+            main_window.table.item(item.row(), 1).setSelected(True)
+        cursor.close()
+        connection.close()
 
 
 class MainWindow(QMainWindow):
@@ -58,6 +99,7 @@ class MainWindow(QMainWindow):
         # create main menu
         file_menu_item = self.menuBar().addMenu("&File")
         help_menu_item = self.menuBar().addMenu("&Help")
+        search_menu_item = self.menuBar().addMenu("&Edit")
 
         # create submenus
         add_student_action = QAction("Add Student", self)
@@ -67,6 +109,10 @@ class MainWindow(QMainWindow):
         about_action = QAction("About", self)
         help_menu_item.addAction(about_action)
         about_action.setMenuRole(QAction.MenuRole.NoRole)
+
+        search_menu_action = QAction("Search Student", self)
+        search_menu_action.triggered.connect(self.search)
+        search_menu_item.addAction(search_menu_action)
 
         # create table
         self.table = QTableWidget()
@@ -92,6 +138,11 @@ class MainWindow(QMainWindow):
     def insert(self):
         dialog = InsertDialog()
         dialog.exec()
+
+    # generates a search dialog to search for students
+    def search(self):
+        search_dialog = SearchDialog()
+        search_dialog.exec()
 
 
 # display app
