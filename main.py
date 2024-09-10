@@ -1,11 +1,23 @@
 import sqlite3
 import sys
+from pyexpat.errors import messages
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QApplication, QGridLayout, QLabel, QLineEdit, \
     QPushButton, QComboBox, QMainWindow, QTableWidget, \
     QTableWidgetItem, QDialog, QVBoxLayout, QToolBar, QStatusBar, QMessageBox
+
+
+class AboutDialog(QMessageBox):
+    def __init__(self):
+        super().__init__()
+        content = """
+        This app is a simple app to learn how to manage data from a small
+        database and learn how to implement a basic GUI to work with the data.
+        """
+        self.setWindowTitle("About")
+        self.setText(content)
 
 
 class InsertDialog(QDialog):
@@ -196,23 +208,27 @@ class MainWindow(QMainWindow):
 
         # create main menu
         file_menu_item = self.menuBar().addMenu("&File")
-        help_menu_item = self.menuBar().addMenu("&Help")
         search_menu_item = self.menuBar().addMenu("&Edit")
+        help_menu_item = self.menuBar().addMenu("&Help")
 
-        # create submenus
+        # create submenus and add actions to them
+        # create action (ICON, TEXT, self)
         add_student_action = QAction(QIcon("icons/add.png"), "Add Student",
                                      self)
+        # what to do when the action is triggered
         add_student_action.triggered.connect(self.insert)
+        # add action to menu item
         file_menu_item.addAction(add_student_action)
-
-        about_action = QAction("About", self)
-        help_menu_item.addAction(about_action)
-        about_action.setMenuRole(QAction.MenuRole.NoRole)
 
         search_menu_action = QAction(QIcon("icons/search.png"),
                                      "Search Student", self)
         search_menu_action.triggered.connect(self.search)
         search_menu_item.addAction(search_menu_action)
+
+        about_action = QAction("About", self)
+        help_menu_item.addAction(about_action)
+        about_action.triggered.connect(self.about)
+        about_action.setMenuRole(QAction.MenuRole.NoRole)
 
         # create table
         self.table = QTableWidget()
@@ -273,6 +289,10 @@ class MainWindow(QMainWindow):
     def search(self):
         search_dialog = SearchDialog()
         search_dialog.exec()
+
+    def about(self):
+        about_dialog = AboutDialog()
+        about_dialog.exec()
 
     # generates a edit dialog to edit selected student data
     def edit(self):
