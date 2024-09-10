@@ -101,28 +101,44 @@ class EditDialog(QDialog):
 
         layout = QVBoxLayout()
 
+        # load selected student data to visualize the name by default
+        self.index = main_window.table.currentRow()
+        selected_student_name = main_window.table.item(self.index, 1).text()
+        selected_student_course = main_window.table.item(self.index, 2).text()
+        selected_student_phone = main_window.table.item(self.index, 3).text()
+        self.selected_student_id = main_window.table.item(self.index, 0).text()
         # create widgets
-        self.student_name = QLineEdit()
-        self.student_name.setPlaceholderText("Name")
+        self.student_name = QLineEdit(selected_student_name)
         layout.addWidget(self.student_name)
 
         self.course_name = QComboBox()
         courses = ["Biology", "Math", "Astronomy", "Physics"]
         self.course_name.addItems(courses)
+        self.course_name.setCurrentText(selected_student_course)
         layout.addWidget(self.course_name)
 
-        self.phone_number = QLineEdit()
-        self.phone_number.setPlaceholderText("123456789")
+        self.phone_number = QLineEdit(selected_student_phone)
         layout.addWidget(self.phone_number)
 
-        button = QPushButton("Edit Student")
+        button = QPushButton("Update Student")
         button.clicked.connect(self.edit_student)
         layout.addWidget(button)
 
         self.setLayout(layout)
 
     def edit_student(self):
-        pass
+        name = self.student_name.text()
+        course = self.course_name.itemText(self.course_name.currentIndex())
+        mobile = self.phone_number.text()
+        connection = sqlite3.connect("database.db")
+        cursor = connection.cursor()
+        cursor.execute("UPDATE students SET name = ?, course = ?, "
+                       "mobile = ? WHERE id = ?",
+                        (name, course, mobile, self.selected_student_id))
+        connection.commit()
+        cursor.close()
+        connection.close()
+        main_window.load_data()
 
 
 class DeleteDialog(QDialog):
@@ -191,11 +207,16 @@ class MainWindow(QMainWindow):
     def cell_clicked(self):
         edit_button = QPushButton("Edit Student")
         edit_button.clicked.connect(self.edit)
-        self.status_bar.addWidget(edit_button)
 
         delete_button = QPushButton("Delete Student")
         delete_button.clicked.connect(self.delete)
-        self.status_bar.addWidget(delete_button)
+
+        # only add buttons if there are not, otherwise it would create the
+        # buttons whenever a cell is selected
+        children = self.findChildren(QPushButton)
+        if not children:
+            self.status_bar.addWidget(edit_button)
+            self.status_bar.addWidget(delete_button)
 
     # populate table with database data
     def load_data(self):
