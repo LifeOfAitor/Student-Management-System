@@ -9,6 +9,15 @@ from PyQt6.QtWidgets import QApplication, QGridLayout, QLabel, QLineEdit, \
     QTableWidgetItem, QDialog, QVBoxLayout, QToolBar, QStatusBar, QMessageBox
 
 
+class DatabaseConnection:
+    def __init__(self, database_name="database.db"):
+        self.database_name = database_name
+
+    def connect(self):
+        connection = sqlite3.connect(self.database_name)
+        return connection
+
+
 class AboutDialog(QMessageBox):
     def __init__(self):
         super().__init__()
@@ -53,7 +62,7 @@ class InsertDialog(QDialog):
         name = self.student_name.text()
         course = self.course_name.itemText(self.course_name.currentIndex())
         mobile = self.phone_number.text()
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute("INSERT INTO students (name, course, mobile) "
                        "values(?, ?, ?)", (name, course, mobile))
@@ -90,7 +99,7 @@ class SearchDialog(QDialog):
 
     def search_student(self):
         name = self.student_name.text()
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         result = cursor.execute("SELECT * FROM students WHERE name = (?)",
                                 (name,))
@@ -144,7 +153,7 @@ class EditDialog(QDialog):
         name = self.student_name.text()
         course = self.course_name.itemText(self.course_name.currentIndex())
         mobile = self.phone_number.text()
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute("UPDATE students SET name = ?, course = ?, "
                        "mobile = ? WHERE id = ?",
@@ -185,7 +194,7 @@ class DeleteDialog(QDialog):
 
     def delete_student(self):
         name = self.selected_student_name
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         cursor = connection.cursor()
         cursor.execute("DELETE from students WHERE name = ?", (name,))
         connection.commit()
@@ -269,7 +278,7 @@ class MainWindow(QMainWindow):
 
     # populate table with database data
     def load_data(self):
-        connection = sqlite3.connect("database.db")
+        connection = DatabaseConnection().connect()
         result = connection.execute("SELECT * FROM students")
         self.table.setRowCount(0)
         # loop for every row and then every row item
